@@ -4,14 +4,294 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator client {`
+  provider = "prisma-client-js"
+}
 
+// ------------------------------
+// Feed types as enum
+// ------------------------------
+enum FeedType {
+  POULTRY
+  FISH
+  CATTLE
+  SWINE
+  PET
+  OTHER
+}
+
+// ------------------------------
+// USER + ROLES
+// ------------------------------
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String // hashed
+  role      Role
+  createdAt DateTime @default(now())
+
+  employees Employee?
+}
+
+enum Role {
+  ADMIN
+  SALES
+  LOGISTICS
+  DRIVER
+}
+
+// ------------------------------
+// CUSTOMER MANAGEMENT
+// ------------------------------
+model Customer {
+  id        String  @id @default(uuid())
+  name      String
+  phone     String
+  email     String?
+  gstNumber String?
+  address   String
+  latitude  Float?
+  longitude Float?
+
+  feedTypes    FeedType[] // <- enum array
+  paymentTerms String?
+  notes        String?
+  documents    String[] // array of URLs (KYC, agreements)
+
+  createdAt DateTime @default(now())
+
+  orders Order[]
+}
+
+// ------------------------------
+// SELLING / ORDER MODULE
+// ------------------------------
+model Order {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  items               OrderItem[]
+  invoiceUrl          String?
+  transportChallanUrl String?
+
+  totalAmount   Float
+  paidAmount    Float @default(0)
+  pendingAmount Float
+
+  paymentMethod PaymentMethod?
+  deliveryDate  DateTime
+  createdAt     DateTime       @default(now())
+
+  assignedDriverId String?
+  assignedDriver   Driver? @relation(fields: [assignedDriverId], references: [id])
+
+  driverDeliveries DriverDelivery[]
+}
+
+model OrderItem {
+  id      String @id @default(uuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  feedType FeedType // <- enum instead of string
+  quantity Float
+  price    Float
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+}
+
+// ------------------------------
+// MANUFACTURING CONSUMPTION
+// ------------------------------
+model RawMaterial {
+  id    String         @id @default(uuid())
+  name  String
+  unit  String
+  feeds FeedMaterial[]
+}
+
+model FeedMaterial {
+  id              String      @id @default(uuid())
+  feedType        FeedType // <- enum
+  rawMaterialId   String
+  rawMaterial     RawMaterial @relation(fields: [rawMaterialId], references: [id])
+  consumptionRate Float
+}
+
+model FactoryExpense {
+  id          String          @id @default(uuid())
+  category    ExpenseCategory
+  amount      Float
+  description String?
+  billUrls    String[] // uploaded bills
+  createdAt   DateTime        @default(now())
+}
+
+enum ExpenseCategory {
+  ELECTRICITY
+  SALARY
+  MAINTENANCE
+  TRANSPORT
+  WATER
+  MISC
+}
+
+model ConsumptionLog {
+  id                String   @id @default(uuid())
+  feedType          FeedType // <- enum
+  rawMaterialUsage  String[] // e.g. ["Maize: 200kg", "Soybean: 50kg"]
+  totalFeedProduced Float?
+  createdAt         DateTime @default(now())
+}
+
+// ------------------------------
+// STOCK MANAGEMENT
+// ------------------------------
+model StockItem {
+  id       String        @id @default(uuid())
+  name     String
+  category StockCategory
+  quantity Float
+  unit     String
+
+  batchNo           String?
+  expiryDate        DateTime?
+  lowStockThreshold Float?
+
+  updatedAt DateTime @default(now())
+
+  stockMovements StockMovement[]
+}
+
+enum StockCategory {
+  RAW
+  FINISHED_FEED
+  PACKAGING
+}
+
+model StockMovement {
+  id          String    @id @default(uuid())
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
+
+  quantity  Float
+  type      MovementType
+  createdAt DateTime     @default(now())
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+// ------------------------------
+// EMPLOYEE MANAGEMENT
+// ------------------------------
+model Employee {
+  id     String  @id @default(uuid())
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  name       String
+  phone      String
+  address    String?
+  department String?
+  role       String?
+  doj        DateTime
+  documents  String[]
+
+  attendance Attendance[]
+  leaves     Leave[]
+  salaries   Salary[]
+}
+
+model Attendance {
+  id         String    @id @default(uuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  checkIn    DateTime?
+  checkOut   DateTime?
+  date       DateTime
+}
+
+model Leave {
+  id         String      @id @default(uuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  startDate  DateTime
+  endDate    DateTime
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Salary {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  month      String
+  amount     Float
+  paid       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ------------------------------
+// TRANSPORT & DRIVER MANAGEMENT
+// ------------------------------
+model Driver {
+  id          String           @id @default(uuid())
+  name        String
+  phone       String
+  vehicleNo   String?
+  documents   String[]
+  locationLog LocationLog[]
+  deliveries  DriverDelivery[]
+
+  orders Order[]
+}
+
+model LocationLog {
+  id        String   @id @default(uuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+}
+
+model DriverDelivery {
+  id       String @id @default(uuid())
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  status    DeliveryStatus @default(STARTED)
+  proofUrls String[]
+  updatedAt DateTime       @default(now())
+}
+
+enum DeliveryStatus {
+  STARTED
+  IN_TRANSIT
+  DELIVERED
+}
