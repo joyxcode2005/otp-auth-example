@@ -15,7 +15,7 @@ router.post("/register/init", async (req: Request, res: Response) => {
     // Normalize the phone number in the correct format
     const phone = normalizePhone(phoneNumber);
 
-    // If incorrect phone number format then return status code 
+    // If incorrect phone number format then return status code
     if (!phone) {
       return res.status(400).json({
         success: false,
@@ -26,12 +26,13 @@ router.post("/register/init", async (req: Request, res: Response) => {
     // Send the otp back to the user
     const { otp } = await sendOtp(phone);
 
-    return res.status(200).json({
-      success: true,
-      message: "OTP generated!!",
-      phone,
-    });
-
+    if (otp)
+      return res.status(200).json({
+        success: true,
+        message: "OTP generated!!",
+        phone,
+      });
+      
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -41,6 +42,5 @@ router.post("/register/init", async (req: Request, res: Response) => {
 });
 
 // TODO: Route to accept the otp and verify it
-
 
 export default router;
