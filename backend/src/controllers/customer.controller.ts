@@ -12,14 +12,14 @@ interface createCustomerSchema {
 }
 
 // Function to check if customer already exists!!!
-export async function checkExistingCustomer(email: string) {
+export async function checkExistingCustomer(phone: string) {
   const existing = await primsa?.customer.findFirst({
     where: {
-      OR: [{ email }],
+      OR: [{ phone }],
     },
   });
 
-  return !!existing;
+  return existing;
 }
 
 // Function to create a new customer!!
@@ -28,15 +28,8 @@ export async function createCustomer(
   phone: string
 ) {
   // Destructuring the data
-  const {
-    name,
-    email,
-    gstNumber,
-    address,
-    latitude,
-    longitude,
-    documents,
-  } = data;
+  const { name, email, gstNumber, address, latitude, longitude, documents } =
+    data;
 
   // Using prisma client to add customer to db
   return await primsa?.customer.create({

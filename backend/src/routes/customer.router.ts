@@ -7,14 +7,23 @@ import {
   createCustomer,
 } from "../controllers/customer.controller";
 import jwt from "jsonwebtoken";
-import { verifyRegisterToken } from "../middlewares/customer.middleware";
+import {
+  customerAuthMiddleware,
+  verifyRegisterToken,
+} from "../middlewares/customer.middleware";
+import prisma from "../config/prisma";
+import { success } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const router = Router();
 
+// ======================
+// Register Route
+// ======================
+
 // Route to send generate the otp and send it to the user
-router.post("/register/init", async (req: Request, res: Response) => {
+router.post("/gen-otp", async (req: Request, res: Response) => {
   // Take the phone number as input from the customer
   let phoneNumber = req.body.phoneNumber?.toString().trim();
 
@@ -37,8 +46,6 @@ router.post("/register/init", async (req: Request, res: Response) => {
       return res.status(200).json({
         success: true,
         message: "OTP generated!!",
-        phone,
-        otp,
       });
   } catch (error) {
     return res.status(500).json({
@@ -121,17 +128,17 @@ router.post(
       });
 
     try {
+      // Get the phone number from the jwt token
+      const phone = (req as any).verifiedPhone;
+
       // Check if existing customer already exists..
-      const result = await checkExistingCustomer(data.email);
+      const result = await checkExistingCustomer(phone);
 
       if (result)
         return res.status(409).json({
           success: false,
           message: "Customer already exists!! Try Login..",
         });
-
-      // Get the phone number from the jwt token
-      const phone = (req as any).verifiedPhone;
 
       // Create new customer entry
       const newCustomer = await createCustomer(data, phone);
@@ -141,6 +148,25 @@ router.post(
           success: false,
           message: "Failed to register!!",
         });
+
+      // Generate JWT for the customer
+      const token = jwt.sign(
+        {
+          id: newCustomer.id,
+          email: newCustomer.email,
+          phone: newCustomer.phone,
+        },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Set token in HTTPOnly cookie
+      res.cookie("customer_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
 
       return res.status(201).json({
         success: true,
@@ -155,5 +181,123 @@ router.post(
     }
   }
 );
+
+// ======================
+// Login Route
+// ======================
+
+router.post("/login/verify", async (req: Request, res: Response) => {
+  // Get the phone number and otp from the body
+  let phoneNumber = req.body.phoneNumber?.toString().trim();
+  const { otp } = req.body;
+
+  // Check if phone number and otp exists
+  if (!phoneNumber || !otp)
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Input!!",
+    });
+
+  try {
+    // Normalize the otp
+    const phone = normalizePhone(phoneNumber);
+
+    // If incorrect phone number format then return status code
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phone number",
+      });
+    }
+
+    // Verify the otp
+    const { success, message } = await verifyOtp(phone, otp);
+
+    // Send response accordingly
+    if (!success)
+      return res.status(400).json({
+        success,
+        message,
+      });
+
+    // Check if existing customer already exists..
+    const existingCustomer = await checkExistingCustomer(phone);
+
+    if (!existingCustomer)
+      return res.status(404).json({
+        success: false,
+        message: "Customer is not registerd!! Register first!!",
+      });
+
+    // Generate JWT for the customer
+    const token = jwt.sign(
+      {
+        id: existingCustomer.id,
+        email: existingCustomer.email,
+        phone: existingCustomer.phone,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Set token in HTTPOnly cookie
+    res.cookie("customer_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Customer logged In successfully!!!",
+      existingCustomer,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!!",
+    });
+  }
+});
+
+// Setting up the auth middleware for protected routes
+router.use(customerAuthMiddleware);
+
+// Test route to see if the cookies are properly being set
+router.get("/info", async (req: Request, res: Response) => {
+  const customer = (req as any).customer;
+
+  const customerDetails = await prisma?.customer.findFirst({
+    where: {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+    },
+    select: {
+      name: true,
+      phone: true,
+      email: true,
+      gstNumber: true,
+      address: true,
+      documents: true,
+      feedTypes: true,
+      notes: true,
+      paymentTerms: true,
+    },
+  });
+
+  if (!customerDetails)
+    return res.status(404).json({
+      success: false,
+      message: "User not found!!!",
+    });
+
+  return res.status(200).json({
+    success: true,
+    message: "Customer details",
+    customer: customerDetails,
+  });
+});
 
 export default router;
