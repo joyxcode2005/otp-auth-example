@@ -52,7 +52,8 @@ export async function sendViaTwilio(
     if (error.code === 21608) {
       return {
         success: false,
-        message: "Phone number not verified. Add it in Twilio console: https://console.twilio.com/us1/develop/phone-numbers/manage/verified",
+        message:
+          "Phone number not verified. Add it in Twilio console: https://console.twilio.com/us1/develop/phone-numbers/manage/verified",
       };
     }
 
@@ -82,21 +83,18 @@ export async function sendOTPSMS(
   console.log(`\n📤 Sending OTP to ${phone} via ${provider}`);
   console.log(`🔑 OTP: ${otp}`);
 
-  switch (provider.toUpperCase()) {
-    case "TWILIO":
-      return sendViaTwilio(phone, otp);
+  if (provider.toUpperCase() === "TWILIO") return sendViaTwilio(phone, otp);
+  else {
+    // Development mode - just log OTP
+    console.log(`\n┌${"─".repeat(50)}┐`);
+    console.log(`│ 🔐 DEV MODE - OTP for ${phone.padEnd(20)} │`);
+    console.log(`│ 📱 OTP: ${otp.padEnd(38)} │`);
+    console.log(`└${"─".repeat(50)}┘\n`);
 
-    default:
-      // Development mode - just log OTP
-      console.log(`\n┌${"─".repeat(50)}┐`);
-      console.log(`│ 🔐 DEV MODE - OTP for ${phone.padEnd(20)} │`);
-      console.log(`│ 📱 OTP: ${otp.padEnd(38)} │`);
-      console.log(`└${"─".repeat(50)}┘\n`);
-
-      return {
-        success: true,
-        message: "OTP logged (development mode)",
-        messageId: `DEV-${Date.now()}`,
-      };
+    return {
+      success: true,
+      message: "OTP logged (development mode)",
+      messageId: `DEV-${Date.now()}`,
+    };
   }
 }
