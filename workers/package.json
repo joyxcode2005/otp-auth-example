@@ -1,16 +1,29 @@
 {
   "name": "workers",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Background workers for SMS and other async tasks",
+  "main": "dist/otp-worker.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "dev": "npm run build && concurrently -n \"TSC,WORKER\" -c \"blue,green\" \"tsc -w\" \"nodemon --delay 2 --watch dist dist/otp-worker.js\"",
+    "start": "node dist/otp-worker.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
+    "@api/fast2sms": "file:.api/apis/fast2sms",
+    "axios": "^1.13.2",
+    "bullmq": "^5.64.1",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
+    "twilio": "^5.10.6",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.11"
   }
 }
