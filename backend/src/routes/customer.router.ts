@@ -290,6 +290,7 @@ router.get("/info", async (req: Request, res: Response) => {
       phone: customer.phone,
     },
     select: {
+      id: true,
       name: true,
       phone: true,
       email: true,
@@ -369,13 +370,16 @@ router.patch("/update", async (req: Request, res: Response) => {
 router.post("/:customerId/order", async (req: Request, res: Response) => {
   const { customerId } = req.params;
 
+  console.log("customer id: ", customerId)
+
   // Validate request body
   const parsed = createOrderSchema.safeParse(req.body);
+  
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error });
   }
 
-  const { items, paymentMethod, deliveryDate } = parsed.data;
+  const { items, paymentMethod, deliveryDate , paidAmount} = parsed.data;
 
   try {
     // Check if customer exists
@@ -397,11 +401,13 @@ router.post("/:customerId/order", async (req: Request, res: Response) => {
       quantity: i.quantity,
       price: i.price,
     }));
+
     const order = await placeOrder(
       customerId,
       deliveryDate,
       paymentMethod,
       totalAmount,
+      paidAmount,
       orderItems
     );
 

@@ -16,7 +16,6 @@ export const customerLoginSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  customerId: z.string().uuid(),
   items: z
     .array(
       z.object({
@@ -27,6 +26,7 @@ export const createOrderSchema = z.object({
     )
     .min(1),
   paymentMethod: z.enum(["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"]).optional(),
+  paidAmount: z.number(),
   deliveryDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: "Invalid date",
   }),

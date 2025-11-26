@@ -102,6 +102,7 @@ export async function placeOrder(
   deliveryDate: string,
   paymentMethod: PaymentMethod | undefined,
   totalAmount: number,
+  paidAmount: number,
   items: Array<{ feedType: FeedType; quantity: number; price: number }>
 ) {
   return await prisma?.order.create({
@@ -110,7 +111,8 @@ export async function placeOrder(
       deliveryDate: new Date(deliveryDate),
       paymentMethod,
       totalAmount,
-      pendingAmount: totalAmount,
+      paidAmount,
+      pendingAmount: totalAmount - paidAmount ,
 
       items: {
         create: items.map((i) => ({
