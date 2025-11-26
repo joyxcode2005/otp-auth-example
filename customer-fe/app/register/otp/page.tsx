@@ -41,10 +41,17 @@ export default function OTPVerifyPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
-      <form onSubmit={verifyOTP} className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Enter OTP</h1>
-        <p className="text-center mb-4">Sent to +91 {phone}</p>
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 via-white to-gray-50 px-4">
+      <form onSubmit={verifyOTP} className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200 w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Enter OTP</h1>
+          <p className="text-gray-600 text-sm">Sent to +91 {phone}</p>
+        </div>
 
         <div className="flex gap-2 justify-center mb-6">
           {otp.map((digit, index) => (
@@ -54,7 +61,7 @@ export default function OTPVerifyPage() {
               maxLength={1}
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
-              className="w-12 h-14 text-center border rounded text-xl"
+              className="w-10 h-12 md:w-12 md:h-14 text-center border-2 border-gray-300 rounded-lg text-xl font-bold focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
             />
           ))}
         </div>
@@ -62,9 +69,16 @@ export default function OTPVerifyPage() {
         <button
           type="submit"
           disabled={otp.some((d) => !d)}
-          className="w-full py-3 bg-green-600 text-white rounded-lg"
+          className="w-full py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all shadow-lg"
         >
           Verify OTP
+        </button>
+
+        <button
+          type="button"
+          className="w-full mt-4 text-orange-500 hover:text-orange-600 font-medium text-sm transition-colors"
+        >
+          Resend OTP
         </button>
       </form>
     </div>
