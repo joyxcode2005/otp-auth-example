@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
 
 import { useState } from "react";
@@ -11,14 +13,16 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    name: "",
-    gstNumber: "",
-    email: "",
-    fullAddress: "",
-    selectedAnimal: "",
-    feedTypes: ["", "", "", "", "", ""],
-    paymentMethod: "",
-    additionalNotes: "",
+    name: '',
+    gstNumber: '',
+    email: '',
+    fullAddress: '',
+    latitude: '',
+    longitude: '',
+    selectedAnimal: '',
+    feedTypes: ['', '', '', '', '', ''],
+    paymentMethod: '',
+    additionalNotes: '',
     documents: null as File | null,
   });
 
@@ -137,14 +141,7 @@ export default function RegisterPage() {
             {/* FORM HEADER */}
             <div className="bg-linear-to-r from-gray-700 to-gray-800 p-6 md:p-8 text-center relative overflow-hidden">
               <div className="absolute inset-0 opacity-10">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle, white 1px, transparent 1px)",
-                    backgroundSize: "20px 20px",
-                  }}
-                ></div>
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
               </div>
 
               <div className="relative z-10">
@@ -167,11 +164,10 @@ export default function RegisterPage() {
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
                   Customer Registration
                 </h2>
-                <p className="text-gray-200 text-sm md:text-base">
-                  Join our platform to track your orders
-                </p>
+                <p className="text-gray-200 text-sm md:text-base">Join our platform to track your orders</p>
 
-                <div className="flex justify-center gap-3 mt-6">
+                {/* Progress Bar */}
+                <div className="flex justify-center gap-2 md:gap-3 mt-4 md:mt-6">
                   <div className="flex items-center gap-2">
                     <div
                       className={`h-2 w-20 rounded-full ${
@@ -238,8 +234,36 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        GST Number *
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
+                        Latitude <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.latitude}
+                        onChange={(e) => handleInputChange('latitude', e.target.value)}
+                        placeholder="e.g., 22.5726"
+                        className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-sm md:text-base"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
+                        Longitude <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.longitude}
+                        onChange={(e) => handleInputChange('longitude', e.target.value)}
+                        placeholder="e.g., 88.3639"
+                        className="w-full px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-sm md:text-base"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
+                        GST Number <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
