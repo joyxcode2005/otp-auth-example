@@ -70,7 +70,7 @@ export default function RegisterPage() {
               <p className="text-orange-600 text-xs md:text-sm font-medium">
                 ANIMAL HUSBANDRY AND DAIRYING
               </p>
-              <p className="text-orange-500 text-xs">GOVERNMENT OF INDIA</p>
+          
             </div>
           </Link>
           <select className="bg-white text-gray-700 px-3 md:px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-orange-500 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500">

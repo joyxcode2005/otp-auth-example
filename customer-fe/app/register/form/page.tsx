@@ -83,7 +83,7 @@ export default function RegisterPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error("Error submitting registration: ", error);
-      
+
       toast.error("Failed to submit registration. Please try again.");
     }
   };
@@ -127,7 +127,7 @@ export default function RegisterPage() {
               <p className="text-orange-600 text-xs md:text-sm font-medium">
                 ANIMAL HUSBANDRY AND DAIRYING
               </p>
-              <p className="text-orange-500 text-xs">GOVERNMENT OF INDIA</p>
+              
             </div>
           </a>
 

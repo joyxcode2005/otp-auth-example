@@ -54,7 +54,7 @@ export default function OrdersPage() {
             <div>
               <h1 className="text-gray-800 font-bold text-sm md:text-base">DEPARTMENT OF</h1>
               <p className="text-orange-600 text-xs md:text-sm">ANIMAL HUSBANDRY AND DAIRYING</p>
-              <p className="text-orange-500 text-xs">GOVERNMENT OF INDIA</p>
+              
             </div>
           </div>
           <div className="flex items-center gap-3 md:gap-4">
