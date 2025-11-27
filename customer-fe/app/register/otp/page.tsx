@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import axios from "axios";
@@ -7,6 +8,8 @@ import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function OTPVerifyPage() {
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
   const phone =
@@ -32,31 +35,33 @@ export default function OTPVerifyPage() {
     }
   };
 
-  // Compact verify function
   const verifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const { data } = await axios.post(
-        `${BACKEND_URL}/customer/register/verify`,
-        {
-          phoneNumber: phone,
-          otp: otp.join(""),
-        },
-        { withCredentials: true }
-      );
+  try {
+    const { data } = await axios.post(
+      `${BACKEND_URL}/customer/register/verify`,
+      {
+        phoneNumber: phone,
+        otp: otp.join(""),
+      },
+      { withCredentials: true }
+    );
 
-      if (data.success) {
-        console.log("OTP verified successfully: ", data);
-        router.push("/register/form");
-      } else toast.error(data.message);
-
-      console.log("Data: ", data);
-    } catch (err) {
-      console.error(err);
+    if (data.success) router.push("/register/form");
+    else toast.error(data.message);
+  } catch (err: any) {
+    if (err.response?.status === 409) {
+      toast.error("Customer already exists!!!");
+    } else {
       toast.error("Something went wrong while verifying OTP.");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     // existing UI unchanged
@@ -101,19 +106,22 @@ export default function OTPVerifyPage() {
         </div>
 
         <button
-          type="submit"
-          disabled={otp.some((d) => !d)}
-          className="w-full py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all shadow-lg"
-        >
-          Verify OTP
-        </button>
+  type="submit"
+  disabled={otp.some((d) => !d) || loading}
+  className="w-full py-3 bg-linear-to-r from-green-500 to-green-600 
+             hover:from-green-600 hover:to-green-700 
+             disabled:from-gray-300 disabled:to-gray-400 
+             disabled:cursor-not-allowed text-white rounded-lg 
+             font-semibold transition-all shadow-lg flex items-center 
+             justify-center gap-2"
+>
+  {loading ? (
+    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+  ) : (
+    "Verify OTP"
+  )}
+</button>
 
-        <button
-          type="button"
-          className="w-full mt-4 text-orange-500 hover:text-orange-600 font-medium text-sm transition-colors"
-        >
-          Resend OTP
-        </button>
       </form>
     </div>
   );

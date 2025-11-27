@@ -93,6 +93,14 @@ router.post("/register/verify", async (req: Request, res: Response) => {
       });
     }
 
+    const existingCustomer = await checkExistingCustomer(phone);
+
+    if(existingCustomer)
+      return res.status(409).json({
+        success: false,
+        message: "Customer already exists!!!"
+      })
+      
     // Verify the otp
     const { success, message } = await verifyOtp(phone, otp);
 
@@ -388,16 +396,7 @@ router.patch("/update", async (req: Request, res: Response) => {
       });
     }
 
-    // ensure email is unique
-    if (dataToUpdate.email) {
-      const existing = await checkExistingCustomerWithEmail(dataToUpdate.email);
-      if (existing) {
-        return res.status(409).json({
-          success: false,
-          message: "Email already in use.",
-        });
-      }
-    }
+  
 
     // Update customer using your controller method
     const updatedCustomer = await updateCustomer(dataToUpdate, customerId);

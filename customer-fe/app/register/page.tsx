@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import { BACKEND_URL } from "@/config";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function RegisterPage() {
       {/* Header */}
       <header className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <a
+          <Link
             href="/"
             className="flex items-center gap-3 md:gap-4 hover:opacity-80 transition-opacity"
           >
@@ -71,7 +72,7 @@ export default function RegisterPage() {
               </p>
               <p className="text-orange-500 text-xs">GOVERNMENT OF INDIA</p>
             </div>
-          </a>
+          </Link>
           <select className="bg-white text-gray-700 px-3 md:px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-orange-500 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500">
             <option>English</option>
             <option>हिन्दी</option>
@@ -211,7 +212,7 @@ export default function RegisterPage() {
                   Quick Registration
                 </h4>
                 <p className="text-gray-600 text-xs">
-                  We'll send you an OTP to verify your phone number
+                  We will send you an OTP to verify your phone number
                 </p>
               </div>
             </div>

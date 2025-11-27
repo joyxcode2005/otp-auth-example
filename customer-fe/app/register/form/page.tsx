@@ -5,7 +5,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "@/config";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -83,6 +83,7 @@ export default function RegisterPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error("Error submitting registration: ", error);
+      
       toast.error("Failed to submit registration. Please try again.");
     }
   };
@@ -94,6 +95,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50">
       {/* Header */}
+      <Toaster position="top-center"
+  reverseOrder={false}
+/>
       <header className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <a

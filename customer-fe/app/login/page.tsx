@@ -1,17 +1,51 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-html-link-for-pages */
 'use client';
 
+import { BACKEND_URL } from '@/config';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOTP] = useState(['', '', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendOTP = (e: React.FormEvent) => {
+  const router = useRouter();
+
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phoneNumber.length === 10) {
-      setShowOTP(true);
+    
+    // check if phone number is valid
+    if (phoneNumber.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/customer/gen-otp`,
+        { phoneNumber },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const json = res.data;
+      if (json.success) {
+        toast.success("OTP sent successfully!");
+        setShowOTP(true);
+      } else {
+        toast.error(json.message || "Failed to send OTP");
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMessage = error.response?.data?.message || "Something went wrong while sending OTP.";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -29,10 +63,98 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle backspace to go to previous input
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Verifying OTP:', otp.join(''));
-    // Add your verification logic here
+    
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      toast.error("Please enter complete OTP");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/customer/login/verify`,
+        { 
+          phoneNumber,
+          otp: otpCode 
+        },
+        
+        { headers: { "Content-Type": "application/json" }, withCredentials:true }
+      );
+
+      const json = res.data;
+      if (json.success) {
+        toast.success("Login successful!");
+        
+        // Store authentication token if provided
+        if (json.token) {
+          localStorage.setItem("auth_token", json.token);
+        }
+        
+        // Store user data if provided
+        if (json.user) {
+          localStorage.setItem("user_data", JSON.stringify(json.user));
+        }
+        
+        // Remove the registration phone number
+        localStorage.removeItem("register_phone");
+        
+        // Redirect to dashboard or home
+        router.push('/dashboard');
+      } else {
+        toast.error(json.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMessage = error.response?.data?.message || "Failed to verify OTP. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/customer/gen-otp`,
+        { phoneNumber },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const json = res.data;
+      if (json.success) {
+        toast.success("OTP resent successfully!");
+        // Clear existing OTP inputs
+        setOTP(['', '', '', '', '', '']);
+        // Focus first input
+        const firstInput = document.getElementById('otp-0');
+        firstInput?.focus();
+      } else {
+        toast.error(json.message || "Failed to resend OTP");
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMessage = error.response?.data?.message || "Something went wrong while resending OTP.";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangeNumber = () => {
+    setShowOTP(false);
+    setOTP(['', '', '', '', '', '']);
   };
 
   return (
@@ -101,19 +223,32 @@ export default function LoginPage() {
                         placeholder="10-digit number"
                         className="flex-1 px-3 md:px-4 py-2 md:py-3 border-2 border-gray-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-sm md:text-base"
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={phoneNumber.length !== 10}
-                    className="w-full bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2.5 md:py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
+                    disabled={phoneNumber.length !== 10 || isLoading}
+                    className="w-full bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2.5 md:py-3 rounded-xl transition-all transform hover:scale-105 disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
                   >
-                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Send OTP
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Send OTP
+                      </>
+                    )}
                   </button>
 
                   <div className="relative">
@@ -141,8 +276,9 @@ export default function LoginPage() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => setShowOTP(false)}
+                        onClick={handleChangeNumber}
                         className="text-orange-500 hover:text-orange-600 text-xs md:text-sm font-medium flex items-center gap-1 transition-colors"
+                        disabled={isLoading}
                       >
                         <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -159,10 +295,13 @@ export default function LoginPage() {
                           key={index}
                           id={`otp-${index}`}
                           type="text"
+                          inputMode="numeric"
                           value={digit}
                           onChange={(e) => handleOTPChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e)}
                           className="w-10 h-12 md:w-12 md:h-14 text-center text-xl md:text-2xl font-bold border-2 border-gray-300 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                           maxLength={1}
+                          disabled={isLoading}
                         />
                       ))}
                     </div>
@@ -170,18 +309,32 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={otp.some(digit => !digit)}
-                    className="w-full bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2.5 md:py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
+                    disabled={otp.some(digit => !digit) || isLoading}
+                    className="w-full bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2.5 md:py-3 rounded-xl transition-all transform hover:scale-105 disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
                   >
-                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Verify & Login
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Verify & Login
+                      </>
+                    )}
                   </button>
 
                   <button
                     type="button"
-                    className="w-full text-orange-500 hover:text-orange-600 font-semibold text-xs md:text-sm transition-colors"
+                    onClick={handleResendOTP}
+                    disabled={isLoading}
+                    className="w-full text-orange-500 hover:text-orange-600 font-semibold text-xs md:text-sm transition-colors disabled:opacity-50"
                   >
                     Did not receive? Resend OTP
                   </button>
